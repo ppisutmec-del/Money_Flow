@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MoneyFlow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --navy-900: #0F172A;
+      --navy-800: #1E293B;
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --border: #E2E8F0;
+      --text-1: #0F172A;
+      --text-2: #64748B;
+      --ok-text: #166534;
+      --ok-bg: #F0FDF4;
+      --ok-border: #BBF7D0;
+      --pending-text: #854D0E;
+      --pending-bg: #FFFBEB;
+      --pending-border: #FDE68A;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Thai", sans-serif;
+    }
+
+    .navy-bg {
+      background: var(--navy-900);
+    }
+
+    .navy-bg-2 {
+      background: var(--navy-800);
+    }
+
+    .border-app {
+      border-color: var(--border);
+    }
+
+    .text-muted {
+      color: var(--text-2);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .row-settled {
+      background: var(--ok-bg);
+      border-color: var(--ok-border);
+    }
+
+    .row-settled .row-title {
+      color: var(--ok-text);
+    }
+
+    .row-pending {
+      background: var(--card);
+      border-color: var(--border);
+    }
+
+    .badge-pending {
+      color: var(--pending-text);
+      background: var(--pending-bg);
+      border: 1px solid var(--pending-border);
+    }
+
+    .badge-ok {
+      color: var(--ok-text);
+      background: var(--ok-bg);
+      border: 1px solid var(--ok-border);
+    }
+
+    .checkbox-btn {
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .checkbox-btn.checked {
+      background: var(--ok-text);
+      border-color: var(--ok-text);
+    }
+
+    .checkbox-btn:focus-visible {
+      outline: 2px solid var(--navy-900);
+      outline-offset: 2px;
+    }
+
+    input,
+    select,
+    button {
+      font-family: inherit;
+    }
+
+    input:focus-visible,
+    select:focus-visible,
+    button:focus-visible,
+    a:focus-visible {
+      outline: 2px solid var(--navy-900);
+      outline-offset: 1px;
+    }
+
+    .amount-input {
+      width: 6.5rem;
+      text-align: right;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 11px;
+      color: #94A3B8;
+      padding: 6px 0;
+    }
+
+    .nav-item.active {
+      color: #fff;
+    }
+
+    .side-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #CBD5E1;
+      font-size: 14px;
+    }
+
+    .side-item.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    @media (min-width:768px) {
+      .modal-overlay {
+        align-items: center;
+      }
+    }
+
+    .modal-box {
+      background: #fff;
+      width: 100%;
+      max-width: 440px;
+      border-radius: 16px 16px 0 0;
+      padding: 20px;
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+
+    @media (min-width:768px) {
+      .modal-box {
+        border-radius: 16px;
+      }
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .field-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background: var(--navy-900);
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <div class="flex min-h-screen">
+
+    <!-- Desktop sidebar -->
+    <aside class="hidden md:flex md:flex-col w-56 navy-bg text-white shrink-0">
+      <div class="px-5 py-5 text-lg font-semibold border-b border-white/10">MoneyFlow</div>
+      <nav class="p-3 flex flex-col gap-1" id="side-nav"></nav>
+      <div class="mt-auto p-4 text-xs text-slate-400" id="side-sync"></div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Top bar (mobile) -->
+      <header class="md:hidden navy-bg text-white px-4 py-3 flex items-center justify-between">
+        <span class="font-semibold">MoneyFlow</span>
+        <span id="mobile-sync" class="text-xs"></span>
+      </header>
+
+      <main id="app-content" class="flex-1 p-4 md:p-6 pb-24 md:pb-6 max-w-5xl w-full mx-auto"></main>
+    </div>
+  </div>
+
+  <!-- Bottom nav (mobile) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 navy-bg grid grid-cols-3" id="bottom-nav"
+    style="padding-bottom:env(safe-area-inset-bottom);"></nav>
+
+  <div id="modal-root"></div>
+
+  <script>
+    /* ================= CONFIG ================= */
+    const CONFIG = {
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbylMPPN0NEbcrQyex__BrfaRwEDfSN1xgTy-5LK-caXJg_lBumvPnk_5vN_oO0-hR076w/exec',
+      CACHE_KEY: 'moneyflow_cache_v1',
+      SYNC_DEBOUNCE_MS: 700
+    };
+
+    const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+    /* ================= STATE ================= */
+    let state = {
+      view: 'dashboard',
+      month: currentMonthKey(),
+      transactions: [],
+      templates: [],
+      lastSync: null,
+      syncStatus: 'idle', // idle | syncing | ok | error | no-url
+      syncMessage: '',
+      pendingOps: new Map()
+    };
+
+    function currentMonthKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+    function uid(prefix) { return prefix + '-' + Date.now() + '-' + Math.floor(Math.random() * 1000); }
+    function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+    function formatMoney(n) { n = Number(n) || 0; return '฿' + n.toLocaleString('th-TH', { maximumFractionDigits: 0 }); }
+    function toBool(v) { return v === true || v === 'TRUE' || v === 'true' || v === 1; }
+    function monthLabel(mk) { const [y, m] = mk.split('-'); return THAI_MONTHS[parseInt(m, 10) - 1] + ' ' + (parseInt(y, 10) + 543); }
+
+    /* ================= PERSISTENCE ================= */
+    function loadCache() {
+      try { const raw = localStorage.getItem(CONFIG.CACHE_KEY); return raw ? JSON.parse(raw) : null; }
+      catch (e) { return null; }
+    }
+    function saveCache() {
+      try {
+        localStorage.setItem(CONFIG.CACHE_KEY, JSON.stringify({
+          transactions: state.transactions, templates: state.templates, lastSync: state.lastSync
+        }));
+      } catch (e) { /* storage full or unavailable - non-fatal */ }
+    }
+
+    /* ================= NORMALIZE ================= */
+    function normalizeTxns(list) {
+      return (list || []).map(t => ({
+        id: t.id, month_key: t.month_key, type: t.type, category: t.category, title: t.title,
+        planned_amount: Number(t.planned_amount) || 0, actual_amount: Number(t.actual_amount) || 0,
+        is_fixed: toBool(t.is_fixed), is_settled: toBool(t.is_settled),
+        settled_at: t.settled_at || '', updated_at: t.updated_at || ''
+      }));
+    }
+    function normalizeTpls(list) {
+      return (list || []).map(t => ({
+        template_id: t.template_id, type: t.type, category: t.category, title: t.title,
+        default_amount: Number(t.default_amount) || 0, due_day: Number(t.due_day) || 1,
+        is_active: toBool(t.is_active)
+      }));
+    }
+    function applyUpsertLocal(list, key, data) {
+      const idx = list.findIndex(x => x[key] === data[key]);
+      if (idx === -1) list.unshift(Object.assign({}, data));
+      else list[idx] = Object.assign({}, list[idx], data);
+    }
+
+    /* ================= SERVER SYNC ================= */
+    function gasReady() { return CONFIG.GAS_URL && CONFIG.GAS_URL.indexOf('PASTE') === -1; }
+
+    function setSyncStatus(status, message) {
+      state.syncStatus = status; state.syncMessage = message || '';
+      renderSyncIndicators();
+    }
+
+    async function refreshFromServer() {
+      if (!gasReady()) { setSyncStatus('no-url'); return; }
+      setSyncStatus('syncing');
+      try {
+        const res = await fetch(CONFIG.GAS_URL + '?action=getData', { method: 'GET' });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        let txns = normalizeTxns(data.transactions);
+        let tpls = normalizeTpls(data.templates);
+        // re-apply any local changes still waiting to sync, on top of server truth
+        state.pendingOps.forEach(op => {
+          if (op.sheet === 'txn') {
+            if (op.op === 'delete') txns = txns.filter(t => t.id !== op.data.id);
+            else applyUpsertLocal(txns, 'id', op.data);
+          } else {
+            if (op.op === 'delete') tpls = tpls.filter(t => t.template_id !== op.data.template_id);
+            else applyUpsertLocal(tpls, 'template_id', op.data);
+          }
+        });
+        state.transactions = txns;
+        state.templates = tpls;
+        state.lastSync = new Date().toISOString();
+        saveCache();
+        setSyncStatus('ok');
+        render();
+      } catch (err) {
+        setSyncStatus('error', 'โหลดข้อมูลไม่สำเร็จ');
+      }
+    }
+
+    function queueOp(sheet, op, data, revert) {
+      const keyField = sheet === 'txn' ? 'id' : 'template_id';
+      const key = sheet + ':' + data[keyField];
+      const existing = state.pendingOps.get(key);
+      state.pendingOps.set(key, {
+        sheet, op,
+        data: existing ? Object.assign({}, existing.data, data) : data,
+        revert: existing ? existing.revert : revert
+      });
+      clearTimeout(queueOp._t);
+      queueOp._t = setTimeout(flushOps, CONFIG.SYNC_DEBOUNCE_MS);
+    }
+
+    function revertOp(pending) {
+      const list = pending.sheet === 'txn' ? state.transactions : state.templates;
+      const keyField = pending.sheet === 'txn' ? 'id' : 'template_id';
+      if (pending.revert.action === 'restore') {
+        applyUpsertLocal(list, keyField, pending.revert.item);
+      } else if (pending.revert.action === 'remove') {
+        const idx = list.findIndex(x => x[keyField] === pending.revert.key);
+        if (idx !== -1) list.splice(idx, 1);
+      }
+    }
+
+    async function flushOps() {
+      if (state.pendingOps.size === 0) return;
+      if (!gasReady()) { setSyncStatus('no-url'); return; }
+      const keys = Array.from(state.pendingOps.keys());
+      const ops = keys.map(k => { const o = state.pendingOps.get(k); return { sheet: o.sheet, op: o.op, data: o.data }; });
+      setSyncStatus('syncing');
+      try {
+        // text/plain avoids a CORS preflight against the Apps Script endpoint
+        const res = await fetch(CONFIG.GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'batchSync', ops })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        keys.forEach(k => state.pendingOps.delete(k));
+        state.lastSync = new Date().toISOString();
+        saveCache();
+        setSyncStatus('ok');
+      } catch (err) {
+        keys.forEach(k => {
+          const pending = state.pendingOps.get(k);
+          if (pending) { revertOp(pending); state.pendingOps.delete(k); }
+        });
+        saveCache();
+        render();
+        setSyncStatus('error', 'ซิงค์ไม่สำเร็จ - ย้อนการเปลี่ยนแปลงที่ค้างอยู่แล้ว');
+      }
+    }
+
+    /* ================= MUTATIONS: transactions ================= */
+    function toggleSettle(id) {
+      const txn = state.transactions.find(t => t.id === id);
+      if (!txn) return;
+      const original = Object.assign({}, txn);
+      txn.is_settled = !txn.is_settled;
+      txn.settled_at = txn.is_settled ? new Date().toISOString() : '';
+      saveCache(); render();
+      queueOp('txn', 'upsert', { id: txn.id, is_settled: txn.is_settled, settled_at: txn.settled_at }, { action: 'restore', item: original });
+    }
+
+    function updateActualAmount(id, value) {
+      const txn = state.transactions.find(t => t.id === id);
+      if (!txn) return;
+      const original = Object.assign({}, txn);
+      txn.actual_amount = Number(value) || 0;
+      saveCache(); render();
+      queueOp('txn', 'upsert', { id: txn.id, actual_amount: txn.actual_amount }, { action: 'restore', item: original });
+    }
+
+    function addTransaction(fields) {
+      const now = new Date().toISOString();
+      const txn = {
+        id: uid('TXN'), month_key: state.month, type: fields.type, category: fields.category,
+        title: fields.title, planned_amount: Number(fields.planned_amount) || 0,
+        actual_amount: Number(fields.actual_amount) || 0, is_fixed: !!fields.is_fixed,
+        is_settled: false, settled_at: '', updated_at: now
+      };
+      state.transactions.unshift(txn);
+      saveCache(); render();
+      queueOp('txn', 'upsert', txn, { action: 'remove', key: txn.id });
+    }
+
+    function updateTransactionFields(id, fields) {
+      const txn = state.transactions.find(t => t.id === id);
+      if (!txn) return;
+      const original = Object.assign({}, txn);
+      Object.assign(txn, {
+        title: fields.title, category: fields.category, type: fields.type,
+        planned_amount: Number(fields.planned_amount) || 0, actual_amount: Number(fields.actual_amount) || 0,
+        is_fixed: !!fields.is_fixed
+      });
+      saveCache(); render();
+      queueOp('txn', 'upsert', {
+        id, title: txn.title, category: txn.category, type: txn.type,
+        planned_amount: txn.planned_amount, actual_amount: txn.actual_amount, is_fixed: txn.is_fixed
+      }, { action: 'restore', item: original });
+    }
+
+    function deleteTransaction(id) {
+      const idx = state.transactions.findIndex(t => t.id === id);
+      if (idx === -1) return;
+      const original = Object.assign({}, state.transactions[idx]);
+      state.transactions.splice(idx, 1);
+      saveCache(); render();
+      queueOp('txn', 'delete', { id }, { action: 'restore', item: original });
+    }
+
+    /* ================= MUTATIONS: templates ================= */
+    function addTemplate(fields) {
+      const tpl = {
+        template_id: uid('TPL'), type: fields.type, category: fields.category, title: fields.title,
+        default_amount: Number(fields.default_amount) || 0, due_day: Number(fields.due_day) || 1, is_active: true
+      };
+      state.templates.unshift(tpl);
+      saveCache(); render();
+      queueOp('tpl', 'upsert', tpl, { action: 'remove', key: tpl.template_id });
+    }
+
+    function updateTemplateFields(id, fields) {
+      const tpl = state.templates.find(t => t.template_id === id);
+      if (!tpl) return;
+      const original = Object.assign({}, tpl);
+      Object.assign(tpl, {
+        title: fields.title, category: fields.category, type: fields.type,
+        default_amount: Number(fields.default_amount) || 0, due_day: Number(fields.due_day) || 1
+      });
+      saveCache(); render();
+      queueOp('tpl', 'upsert', {
+        template_id: id, title: tpl.title, category: tpl.category, type: tpl.type,
+        default_amount: tpl.default_amount, due_day: tpl.due_day
+      }, { action: 'restore', item: original });
+    }
+
+    function toggleTemplateActive(id) {
+      const tpl = state.templates.find(t => t.template_id === id);
+      if (!tpl) return;
+      const original = Object.assign({}, tpl);
+      tpl.is_active = !tpl.is_active;
+      saveCache(); render();
+      queueOp('tpl', 'upsert', { template_id: id, is_active: tpl.is_active }, { action: 'restore', item: original });
+    }
+
+    function deleteTemplate(id) {
+      const idx = state.templates.findIndex(t => t.template_id === id);
+      if (idx === -1) return;
+      const original = Object.assign({}, state.templates[idx]);
+      state.templates.splice(idx, 1);
+      saveCache(); render();
+      queueOp('tpl', 'delete', { template_id: id }, { action: 'restore', item: original });
+    }
+
+    function generateCurrentMonth() {
+      const active = state.templates.filter(t => t.is_active);
+      const monthCompact = state.month.replace('-', '');
+      let count = 0;
+      active.forEach(tpl => {
+        const id = 'TXN-' + monthCompact + '-' + tpl.template_id;
+        if (state.transactions.some(t => t.id === id)) return;
+        const now = new Date().toISOString();
+        const txn = {
+          id, month_key: state.month, type: tpl.type, category: tpl.category, title: tpl.title,
+          planned_amount: tpl.default_amount, actual_amount: tpl.default_amount,
+          is_fixed: true, is_settled: false, settled_at: '', updated_at: now
+        };
+        state.transactions.unshift(txn);
+        queueOp('txn', 'upsert', txn, { action: 'remove', key: id });
+        count++;
+      });
+      saveCache(); render();
+      toast(count > 0 ? ('สร้างรายการแล้ว ' + count + ' รายการ') : 'มีรายการของเดือนนี้ครบแล้ว');
+    }
+
+    /* ================= DUE DAY LOOKUP ================= */
+    function dueDayForTxn(txn) {
+      const m = /^TXN-\d{6}-(.+)$/.exec(txn.id);
+      if (!m) return null;
+      const tpl = state.templates.find(t => t.template_id === m[1]);
+      return tpl ? tpl.due_day : null;
+    }
+
+    /* ================= TOAST ================= */
+    function toast(msg) {
+      const el = document.createElement('div');
+      el.textContent = msg;
+      el.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:60;max-width:90vw;text-align:center;';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    /* ================= MODAL ================= */
+    function openModal(html) {
+      document.getElementById('modal-root').innerHTML =
+        '<div class="modal-overlay" onclick="if(event.target===this) closeModal()"><div class="modal-box">' + html + '</div></div>';
+    }
+    function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+    function openTransactionModal(existingId) {
+      const txn = existingId ? state.transactions.find(t => t.id === existingId) : null;
+      const title = txn ? 'แก้ไขรายการ' : 'เพิ่มรายการด่วน';
+      openModal(`
+    <h2 class="text-base font-semibold mb-4">${title}</h2>
+    <form id="txn-form" class="space-y-3" onsubmit="return submitTransactionForm(event, ${txn ? "'" + txn.id + "'" : 'null'})">
+      <div>
+        <label class="field-label">ประเภท</label>
+        <select name="type" class="field-input">
+          <option value="INCOME" ${txn && txn.type === 'INCOME' ? 'selected' : ''}>รายรับ</option>
+          <option value="EXPENSE" ${!txn || txn.type === 'EXPENSE' ? 'selected' : ''}>รายจ่าย</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">ชื่อรายการ</label>
+        <input required name="title" class="field-input" value="${escapeHtml(txn ? txn.title : '')}" placeholder="เช่น ค่าอินเทอร์เน็ต">
+      </div>
+      <div>
+        <label class="field-label">หมวดหมู่</label>
+        <input required name="category" class="field-input" value="${escapeHtml(txn ? txn.category : '')}" placeholder="เช่น สาธารณูปโภค">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">ยอดตั้งเป้า</label>
+          <input required type="number" step="0.01" name="planned_amount" class="field-input" value="${txn ? txn.planned_amount : ''}">
+        </div>
+        <div>
+          <label class="field-label">ยอดจริง</label>
+          <input required type="number" step="0.01" name="actual_amount" class="field-input" value="${txn ? txn.actual_amount : ''}">
+        </div>
+      </div>
+      <label class="flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" name="is_fixed" ${txn && txn.is_fixed ? 'checked' : ''}> รายการประจำ (Fixed)
+      </label>
+      <div class="flex gap-2 pt-2">
+        <button type="button" class="btn-secondary flex-1" onclick="closeModal()">ยกเลิก</button>
+        <button type="submit" class="btn-primary flex-1">บันทึก</button>
+      </div>
+    </form>
+  `);
+    }
+    function submitTransactionForm(ev, existingId) {
+      ev.preventDefault();
+      const f = ev.target;
+      const fields = {
+        type: f.type.value, title: f.title.value.trim(), category: f.category.value.trim(),
+        planned_amount: f.planned_amount.value, actual_amount: f.actual_amount.value,
+        is_fixed: f.is_fixed.checked
+      };
+      if (!fields.title || !fields.category) return false;
+      if (existingId) updateTransactionFields(existingId, fields);
+      else addTransaction(fields);
+      closeModal();
+      return false;
+    }
+
+    function openTemplateModal(existingId) {
+      const tpl = existingId ? state.templates.find(t => t.template_id === existingId) : null;
+      const title = tpl ? 'แก้ไขแม่แบบ' : 'เพิ่มแม่แบบรายการประจำ';
+      openModal(`
+    <h2 class="text-base font-semibold mb-4">${title}</h2>
+    <form id="tpl-form" class="space-y-3" onsubmit="return submitTemplateForm(event, ${tpl ? "'" + tpl.template_id + "'" : 'null'})">
+      <div>
+        <label class="field-label">ประเภท</label>
+        <select name="type" class="field-input">
+          <option value="INCOME" ${tpl && tpl.type === 'INCOME' ? 'selected' : ''}>รายรับ</option>
+          <option value="EXPENSE" ${!tpl || tpl.type === 'EXPENSE' ? 'selected' : ''}>รายจ่าย</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">ชื่อรายการ</label>
+        <input required name="title" class="field-input" value="${escapeHtml(tpl ? tpl.title : '')}" placeholder="เช่น เงินเดือน">
+      </div>
+      <div>
+        <label class="field-label">หมวดหมู่</label>
+        <input required name="category" class="field-input" value="${escapeHtml(tpl ? tpl.category : '')}" placeholder="เช่น รายได้ประจำ">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">ยอดโดยประมาณ/เดือน</label>
+          <input required type="number" step="0.01" name="default_amount" class="field-input" value="${tpl ? tpl.default_amount : ''}">
+        </div>
+        <div>
+          <label class="field-label">วันครบกำหนด (1-31)</label>
+          <input required type="number" min="1" max="31" name="due_day" class="field-input" value="${tpl ? tpl.due_day : 1}">
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" class="btn-secondary flex-1" onclick="closeModal()">ยกเลิก</button>
+        <button type="submit" class="btn-primary flex-1">บันทึก</button>
+      </div>
+    </form>
+  `);
+    }
+    function submitTemplateForm(ev, existingId) {
+      ev.preventDefault();
+      const f = ev.target;
+      const fields = {
+        type: f.type.value, title: f.title.value.trim(), category: f.category.value.trim(),
+        default_amount: f.default_amount.value, due_day: f.due_day.value
+      };
+      if (!fields.title || !fields.category) return false;
+      if (existingId) updateTemplateFields(existingId, fields);
+      else addTemplate(fields);
+      closeModal();
+      return false;
+    }
+
+    /* ================= NAV ================= */
+    const NAV_ITEMS = [
+      { id: 'dashboard', label: 'แดชบอร์ด', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+      { id: 'templates', label: 'แม่แบบ', icon: 'M9 3v2m6-2v2M4 8h16M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z' },
+      { id: 'history', label: 'ประวัติ', icon: 'M9 17v-6h6v6m-9 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' }
+    ];
+    function iconSvg(path, cls) { return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls || 'w-5 h-5'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`; }
+
+    function renderNav() {
+      document.getElementById('side-nav').innerHTML = NAV_ITEMS.map(n => `
+    <button class="side-item ${state.view === n.id ? 'active' : ''} text-left" onclick="setView('${n.id}')">
+      ${iconSvg(n.icon, 'w-5 h-5')}<span>${n.label}</span>
+    </button>`).join('');
+      document.getElementById('bottom-nav').innerHTML = NAV_ITEMS.map(n => `
+    <button class="nav-item ${state.view === n.id ? 'active' : ''}" onclick="setView('${n.id}')">
+      ${iconSvg(n.icon, 'w-5 h-5')}<span>${n.label}</span>
+    </button>`).join('');
+    }
+    function setView(v) { state.view = v; render(); }
+
+    /* ================= SYNC INDICATOR ================= */
+    function syncDotColor() {
+      if (state.syncStatus === 'syncing') return '#F59E0B';
+      if (state.syncStatus === 'error') return '#DC2626';
+      if (state.syncStatus === 'no-url') return '#94A3B8';
+      return '#22C55E';
+    }
+    function syncLabel() {
+      if (state.syncStatus === 'syncing') return 'กำลังซิงค์...';
+      if (state.syncStatus === 'error') return state.syncMessage || 'ซิงค์ผิดพลาด';
+      if (state.syncStatus === 'no-url') return 'ยังไม่ได้ตั้งค่า GAS_URL';
+      if (state.lastSync) return 'ซิงค์ล่าสุด ' + new Date(state.lastSync).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      return 'พร้อมใช้งาน';
+    }
+    function renderSyncIndicators() {
+      const dot = `<span class="sync-dot" style="background:${syncDotColor()}"></span>`;
+      const sideEl = document.getElementById('side-sync');
+      if (sideEl) sideEl.innerHTML = dot + ' <span class="align-middle ml-1">' + syncLabel() + '</span>';
+      const mobEl = document.getElementById('mobile-sync');
+      if (mobEl) mobEl.innerHTML = dot;
+      const historyEl = document.getElementById('history-sync-status');
+      if (historyEl) historyEl.innerHTML = dot + ' <span class="align-middle ml-1">' + syncLabel() + '</span>';
+    }
+
+    /* ================= RENDER: DASHBOARD ================= */
+    function monthTxns() { return state.transactions.filter(t => t.month_key === state.month); }
+
+    function renderDashboard() {
+      const txns = monthTxns();
+      const income = txns.filter(t => t.type === 'INCOME');
+      const expense = txns.filter(t => t.type === 'EXPENSE');
+      const fixedExpense = expense.filter(t => t.is_fixed);
+
+      const incomePlanned = income.reduce((s, t) => s + t.planned_amount, 0);
+      const incomeReceived = income.filter(t => t.is_settled).reduce((s, t) => s + t.actual_amount, 0);
+      const expensePlanned = fixedExpense.reduce((s, t) => s + t.planned_amount, 0);
+      const expensePaid = fixedExpense.filter(t => t.is_settled).reduce((s, t) => s + t.actual_amount, 0);
+      const allActualSettledIncome = income.filter(t => t.is_settled).reduce((s, t) => s + t.actual_amount, 0);
+      const allActualSettledExpense = expense.filter(t => t.is_settled).reduce((s, t) => s + t.actual_amount, 0);
+      const netRemaining = allActualSettledIncome - allActualSettledExpense;
+      const totalCount = txns.length;
+      const settledCount = txns.filter(t => t.is_settled).length;
+      const progress = totalCount ? Math.round((settledCount / totalCount) * 100) : 0;
+
+      function sortByDue(list) {
+        return list.slice().sort((a, b) => {
+          const da = dueDayForTxn(a) ?? 99, db = dueDayForTxn(b) ?? 99;
+          return da - db;
+        });
+      }
+
+      function txnCard(t) {
+        const due = dueDayForTxn(t);
+        return `
+    <div class="card p-3 flex items-center gap-3 ${t.is_settled ? 'row-settled' : 'row-pending'}">
+      <button class="checkbox-btn ${t.is_settled ? 'checked' : ''}" onclick="toggleSettle('${t.id}')" aria-label="ทำเครื่องหมาย ${t.is_settled ? 'ยังไม่เสร็จ' : 'เสร็จแล้ว'}">
+        ${t.is_settled ? iconSvg('M5 13l4 4L19 7', 'w-5 h-5 text-white') : ''}
+      </button>
+      <div class="flex-1 min-w-0">
+        <div class="font-medium truncate row-title">${escapeHtml(t.title)}</div>
+        <div class="text-xs text-muted truncate">${escapeHtml(t.category)}${due ? ' • กำหนดวันที่ ' + due : ''}${t.is_fixed ? ' • ประจำ' : ''}</div>
+      </div>
+      <input type="number" class="field-input amount-input" value="${t.actual_amount}"
+        onchange="updateActualAmount('${t.id}', this.value)" aria-label="ยอดจริง">
+      <div class="flex flex-col gap-1 text-xs shrink-0">
+        <button class="text-muted hover:text-slate-900" onclick="openTransactionModal('${t.id}')">แก้ไข</button>
+        <button class="text-red-600 hover:text-red-800" onclick="if(confirm('ลบรายการนี้?')) deleteTransaction('${t.id}')">ลบ</button>
+      </div>
+    </div>`;
+      }
+
+      document.getElementById('app-content').innerHTML = `
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-2">
+        <button class="btn-secondary px-3" onclick="changeMonth(-1)" aria-label="เดือนก่อนหน้า">‹</button>
+        <div class="font-semibold text-lg w-32 text-center">${monthLabel(state.month)}</div>
+        <button class="btn-secondary px-3" onclick="changeMonth(1)" aria-label="เดือนถัดไป">›</button>
+      </div>
+      <button class="btn-primary" onclick="openTransactionModal(null)">+ เพิ่มรายการด่วน</button>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div class="card p-4">
+        <div class="text-xs text-muted mb-1">รายรับ (ได้รับ/ประมาณการ)</div>
+        <div class="text-lg font-semibold">${formatMoney(incomeReceived)}</div>
+        <div class="text-xs text-muted">จาก ${formatMoney(incomePlanned)}</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-muted mb-1">รายจ่ายประจำ (ชำระ/งบ)</div>
+        <div class="text-lg font-semibold">${formatMoney(expensePaid)}</div>
+        <div class="text-xs text-muted">จาก ${formatMoney(expensePlanned)}</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-muted mb-1">ยอดคงเหลือสุทธิ</div>
+        <div class="text-lg font-semibold ${netRemaining < 0 ? 'text-red-600' : ''}">${formatMoney(netRemaining)}</div>
+        <div class="text-xs text-muted">รับแล้ว − จ่ายแล้ว</div>
+      </div>
+      <div class="card p-4">
+        <div class="text-xs text-muted mb-1">ความคืบหน้า</div>
+        <div class="text-lg font-semibold">${progress}%</div>
+        <div class="w-full bg-slate-100 rounded-full h-2 mt-2">
+          <div class="h-2 rounded-full navy-bg" style="width:${progress}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-sm font-semibold text-muted mb-2">รายรับประจำ (${income.length})</h3>
+        <div class="space-y-2">${sortByDue(income).map(txnCard).join('') || emptyState('ยังไม่มีรายรับในเดือนนี้')}</div>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-muted mb-2">รายจ่ายประจำ (${expense.length})</h3>
+        <div class="space-y-2">${sortByDue(expense).map(txnCard).join('') || emptyState('ยังไม่มีรายจ่ายในเดือนนี้')}</div>
+      </div>
+    </div>
+  `;
+    }
+    function emptyState(msg) { return `<div class="card p-4 text-sm text-muted text-center">${msg}</div>`; }
+    function changeMonth(delta) {
+      const [y, m] = state.month.split('-').map(Number);
+      const d = new Date(y, m - 1 + delta, 1);
+      state.month = currentMonthKey(d);
+      render();
+    }
+
+    /* ================= RENDER: TEMPLATES ================= */
+    function renderTemplates() {
+      const tpls = state.templates;
+      document.getElementById('app-content').innerHTML = `
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+      <h2 class="font-semibold text-lg">จัดการแม่แบบรายการประจำ</h2>
+      <div class="flex gap-2">
+        <button class="btn-secondary" onclick="generateCurrentMonth()">สร้างรายการเดือนนี้</button>
+        <button class="btn-primary" onclick="openTemplateModal(null)">+ เพิ่มแม่แบบ</button>
+      </div>
+    </div>
+    <div class="space-y-2">
+      ${tpls.map(t => `
+        <div class="card p-3 flex items-center gap-3 ${t.is_active ? '' : 'opacity-60'}">
+          <span class="text-xs px-2 py-1 rounded ${t.type === 'INCOME' ? 'badge-ok' : 'badge-pending'}">${t.type === 'INCOME' ? 'รายรับ' : 'รายจ่าย'}</span>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium truncate">${escapeHtml(t.title)}</div>
+            <div class="text-xs text-muted truncate">${escapeHtml(t.category)} • วันครบกำหนด ${t.due_day} • ${formatMoney(t.default_amount)}/เดือน</div>
+          </div>
+          <label class="flex items-center gap-1 text-xs text-muted">
+            <input type="checkbox" ${t.is_active ? 'checked' : ''} onchange="toggleTemplateActive('${t.template_id}')"> ใช้งาน
+          </label>
+          <button class="text-xs text-muted hover:text-slate-900" onclick="openTemplateModal('${t.template_id}')">แก้ไข</button>
+          <button class="text-xs text-red-600 hover:text-red-800" onclick="if(confirm('ลบแม่แบบนี้?')) deleteTemplate('${t.template_id}')">ลบ</button>
+        </div>
+      `).join('') || emptyState('ยังไม่มีแม่แบบ เริ่มเพิ่มรายการประจำของคุณ')}
+    </div>
+  `;
+    }
+
+    /* ================= RENDER: HISTORY ================= */
+    function renderHistory() {
+      const byMonth = {};
+      state.transactions.forEach(t => {
+        if (!byMonth[t.month_key]) byMonth[t.month_key] = { income_planned: 0, income_actual: 0, expense_planned: 0, expense_actual: 0 };
+        const b = byMonth[t.month_key];
+        if (t.type === 'INCOME') { b.income_planned += t.planned_amount; if (t.is_settled) b.income_actual += t.actual_amount; }
+        else { b.expense_planned += t.planned_amount; if (t.is_settled) b.expense_actual += t.actual_amount; }
+      });
+      const months = Object.keys(byMonth).sort().reverse();
+
+      document.getElementById('app-content').innerHTML = `
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <h2 class="font-semibold text-lg">ประวัติและรายงานย้อนหลัง</h2>
+      <div class="flex items-center gap-3 text-xs">
+        <span id="history-sync-status"></span>
+        <button class="btn-secondary" onclick="refreshFromServer()">บังคับซิงค์</button>
+      </div>
+    </div>
+    <div class="card overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-muted border-b border-app">
+            <th class="p-3">เดือน</th>
+            <th class="p-3">รายรับ (จริง/งบ)</th>
+            <th class="p-3">รายจ่าย (จริง/งบ)</th>
+            <th class="p-3">สุทธิ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${months.map(mk => {
+        const b = byMonth[mk];
+        const net = b.income_actual - b.expense_actual;
+        return `<tr class="border-b border-app last:border-0">
+              <td class="p-3 font-medium">${monthLabel(mk)}</td>
+              <td class="p-3">${formatMoney(b.income_actual)} / ${formatMoney(b.income_planned)}</td>
+              <td class="p-3">${formatMoney(b.expense_actual)} / ${formatMoney(b.expense_planned)}</td>
+              <td class="p-3 ${net < 0 ? 'text-red-600' : ''}">${formatMoney(net)}</td>
+            </tr>`;
+      }).join('') || `<tr><td class="p-4 text-muted" colspan="4">ยังไม่มีข้อมูลย้อนหลัง</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+      renderSyncIndicators();
+    }
+
+    /* ================= MAIN RENDER ================= */
+    function render() {
+      renderNav();
+      if (state.view === 'dashboard') renderDashboard();
+      else if (state.view === 'templates') renderTemplates();
+      else renderHistory();
+      renderSyncIndicators();
+    }
+
+    /* ================= KEYBOARD SHORTCUTS ================= */
+    document.addEventListener('keydown', (e) => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+      if (document.getElementById('modal-root').innerHTML.trim() !== '') return;
+      if (e.key === 'n' || e.key === 'N') {
+        if (state.view === 'dashboard') openTransactionModal(null);
+        else if (state.view === 'templates') openTemplateModal(null);
+      }
+    });
+
+    /* ================= BOOT ================= */
+    function boot() {
+      const cached = loadCache();
+      if (cached) {
+        state.transactions = normalizeTxns(cached.transactions);
+        state.templates = normalizeTpls(cached.templates);
+        state.lastSync = cached.lastSync || null;
+      }
+      render(); // instant paint from cache, well under 100ms
+      refreshFromServer(); // background sync
+    }
+    boot();
+  </script>
+</body>
+
+</html>
